@@ -6,7 +6,6 @@ import type { AudioResource, Chapter, Paginated, UploadResult, Work } from '@/ty
 
 interface WorkDataOptions {
   isSorting: () => boolean
-  hasPendingChanges: () => boolean
   retainedChapterIds: () => number[]
   onReload: () => void
 }
@@ -244,35 +243,7 @@ export function useWorkData(id: number, options: WorkDataOptions) {
       void loadPage(1)
     }
   }
-  let polling = false
-  const statusController = new AbortController()
-  async function refreshStatus() {
-    if (document.hidden || !work.value || polling) return
-    polling = true
-    try {
-      const result = (
-        await api
-          .get(`works/${id}/status`, { signal: statusController.signal })
-          .json<{ data: Partial<Work> }>()
-      ).data
-      if (statusController.signal.aborted) return
-      if (result.revision !== work.value.revision) {
-        if (options.hasPendingChanges()) serverChanged.value = true
-        else await load()
-      } else Object.assign(work.value, result)
-    } catch {
-      /* Retain the last known state on a transient network failure. */
-    } finally {
-      polling = false
-    }
-  }
-  const statusTimer = window.setInterval(refreshStatus, 10000)
-  useEventListener(document, 'visibilitychange', () => {
-    if (!document.hidden) void refreshStatus()
-  })
   onScopeDispose(() => {
-    clearInterval(statusTimer)
-    statusController.abort()
     pageController?.abort()
     directoryController?.abort()
     loadVersion++

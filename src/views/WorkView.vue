@@ -32,15 +32,6 @@ const { fail } = useFeedback()
 const data = useWorkData(id, {
   isSorting: () => order.active.value,
   retainedChapterIds: () => selection.retainedChapterIds.value,
-  hasPendingChanges: () =>
-    order.dirty.value ||
-    order.active.value ||
-    data.directoryLoading.value ||
-    editOpen.value ||
-    organizeOpen.value ||
-    chapterOpen.value ||
-    actionBusy.value ||
-    selectedCount.value > 0,
   onReload: () => {
     selection.clearSelection()
     order.reset()
