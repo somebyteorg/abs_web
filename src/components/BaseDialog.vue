@@ -22,7 +22,7 @@ watch([open, dialog], async () => {
     :aria-labelledby="titleId"
     :aria-busy="busy || undefined"
     @close="open = false"
-    @cancel.prevent="close"
+    @cancel.self.prevent="close"
   >
     <div class="modal-heading">
       <h2 :id="titleId">{{ title }}</h2>
