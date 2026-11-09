@@ -1,0 +1,172 @@
+.work-title-layout {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+
+.list-cover {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 54px;
+  overflow: hidden;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.list-cover img,
+.detail-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.work-title-copy {
+  min-width: 0;
+}
+
+.work-title-copy p {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  margin-top: 4px;
+  color: #7c887f;
+  font-size: 12px;
+}
+
+.cover-tone-0 {
+  background: #e2ebdb;
+  color: #6f805e;
+}
+
+.cover-tone-1 {
+  background: #efe4d8;
+  color: #a18161;
+}
+
+.cover-tone-3 {
+  background: #dfece7;
+  color: #6d8c7f;
+}
+
+.cover-tone-4 {
+  background: #eee9d7;
+  color: #9c905c;
+}
+
+.work-summary {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.detail-cover {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 80px;
+  height: 106px;
+  border-radius: 8px;
+  overflow: hidden;
+  text-align: center;
+}
+
+.detail-cover > span {
+  padding: 7px;
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.detail-intro {
+  flex: 1;
+  min-width: 0;
+}
+
+.work-tagline {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.work-title-copy .work-tagline {
+  overflow: hidden;
+  margin-top: 2px;
+  font-size: 13px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.work-description {
+  margin-top: 10px;
+  color: #586f60;
+  font-size: 14px;
+}
+
+p.work-description {
+  line-height: 1.9;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.work-description summary {
+  width: fit-content;
+  cursor: pointer;
+}
+
+.work-description p {
+  margin-top: 8px;
+  max-height: 240px;
+  overflow-y: auto;
+  color: #65775a;
+  line-height: 1.9;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 900px) {
+  .work-summary {
+    flex-wrap: wrap;
+  }
+
+  .detail-intro {
+    flex-basis: calc(100% - 100px);
+  }
+}
+
+@media (max-width: 640px) {
+  .work-title-layout {
+    gap: 8px;
+  }
+
+  .list-cover {
+    width: 32px;
+    height: 44px;
+  }
+
+  .work-title-copy p {
+    font-size: 12px;
+  }
+
+  .work-summary {
+    gap: 10px;
+  }
+
+  .detail-cover {
+    width: 52px;
+    height: 70px;
+  }
+
+  .detail-intro {
+    flex-basis: calc(100% - 64px);
+  }
+}
+
+.cover-tone-2 {
+  background: #e9e3ef;
+  color: #8e7d9d;
+}

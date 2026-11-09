@@ -1,0 +1,89 @@
+.queue-issue-count {
+  margin-left: 4px;
+  color: #9b6434;
+}
+
+.upload-queue {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+}
+
+.queue-item {
+  padding: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.queue-file {
+  min-width: 0;
+}
+
+.queue-file strong {
+  display: block;
+  overflow-wrap: anywhere;
+  color: #40593c;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.queue-file > span {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.queue-item.error {
+  background: #fffbf3;
+}
+
+@media (max-width: 640px) {
+  .queue-file strong {
+    font-size: 13px;
+  }
+}
+
+.duplicate-matches {
+  min-width: 0;
+  margin: 10px 0;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-soft, #f6f8f7);
+}
+
+.duplicate-match {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.duplicate-match > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.duplicate-match p {
+  margin: 3px 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.duplicate-match .button {
+  flex-shrink: 0;
+}
+
+@media (max-width: 600px) {
+  .duplicate-match {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .duplicate-match .button {
+    align-self: flex-end;
+  }
+}

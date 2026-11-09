@@ -1,0 +1,44 @@
+/**
+ * For more details on how to configure Wrangler, refer to:
+ * https://developers.cloudflare.com/workers/wrangler/configuration/
+ */
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "abs-web",
+  "compatibility_date": "2026-11-08",
+  "assets": {
+    "html_handling": "none",
+    "not_found_handling": "single-page-application",
+    "directory": "./dist/",
+  },
+  "observability": {
+    "logs": {
+      "enabled": false,
+    },
+    "traces": {
+      "enabled": false,
+    },
+  },
+  "routes": [
+    {
+      "pattern": "abs.emos.best/",
+      "zone_name": "emos.best",
+    },
+    {
+      "pattern": "abs.emos.best/favicon*",
+      "zone_name": "emos.best",
+    },
+    {
+      "pattern": "abs.emos.best/robots.txt",
+      "zone_name": "emos.best",
+    },
+    {
+      "pattern": "abs.emos.best/assets/*",
+      "zone_name": "emos.best",
+    },
+    {
+      "pattern": "abs.emos.best/.well-known/*",
+      "zone_name": "emos.best",
+    },
+  ],
+}
