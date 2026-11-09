@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import AppHeader from '@/components/AppHeader.vue'
 import AppFeedback from '@/components/AppFeedback.vue'
+import AppFooter from '@/components/AppFooter.vue'
 import AudioPlayer from '@/components/AudioPlayer.vue'
 import SignInScreen from '@/components/SignInScreen.vue'
 import UploadQueueDialog from '@/components/UploadQueueDialog.vue'
@@ -19,28 +20,30 @@ const emosIconUrl = 'https://files.emos.best/files/base/logo/logo_1.jpg'
 
 <template>
   <AudioPlayer v-model:height="playerHeight" />
-  <SignInScreen
-    v-if="!sign.ready || !sign.user"
-    :ready="sign.ready"
-    :boot-error="bootError"
-    :abs-icon-url="absIconUrl"
-    :emos-icon-url="emosIconUrl"
-    @retry="boot"
-  />
   <div
-    v-else
     :class="['app-shell', { 'has-player': player.track, 'player-minimized': player.collapsed }]"
     :style="{
       '--topbar-height': `${topbarHeight || 68}px`,
       '--player-height': `${playerHeight || 100}px`,
     }"
   >
-    <AppHeader v-model:height="topbarHeight" :abs-icon-url="absIconUrl" />
-    <main id="main-content" class="page-content">
-      <RouterView v-slot="{ Component }"
-        ><component :is="Component" :key="$route.path"
-      /></RouterView>
-    </main>
+    <SignInScreen
+      v-if="!sign.ready || !sign.user"
+      :ready="sign.ready"
+      :boot-error="bootError"
+      :abs-icon-url="absIconUrl"
+      :emos-icon-url="emosIconUrl"
+      @retry="boot"
+    />
+    <template v-else>
+      <AppHeader v-model:height="topbarHeight" :abs-icon-url="absIconUrl" />
+      <main id="main-content" class="page-content">
+        <RouterView v-slot="{ Component }"
+          ><component :is="Component" :key="$route.path"
+        /></RouterView>
+      </main>
+    </template>
+    <AppFooter />
   </div>
   <AppFeedback :player-height="playerHeight" />
   <UploadQueueDialog />
@@ -48,12 +51,18 @@ const emosIconUrl = 'https://files.emos.best/files/base/logo/logo_1.jpg'
 
 <style scoped>
 .app-shell {
+  display: flex;
+  flex-direction: column;
   min-height: 100dvh;
 }
 .app-shell.has-player:not(.player-minimized) {
   padding-bottom: calc(var(--player-height) + 12px);
 }
+.app-shell.has-player.player-minimized {
+  padding-bottom: calc(var(--player-height) + 24px + env(safe-area-inset-bottom));
+}
 .page-content {
+  flex: 1;
   width: 100%;
   max-width: 1840px;
   margin: 0 auto;

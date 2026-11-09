@@ -38,21 +38,21 @@ defineEmits<{ retry: [] }>()
   object-fit: contain;
 }
 .boot-screen {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 18px;
-  min-height: 100dvh;
   color: #71856b;
 }
 .welcome {
+  flex: 1;
   max-width: none;
   margin: 0;
   padding: 24px;
   display: grid;
   place-items: center;
-  min-height: 100dvh;
   background: radial-gradient(ellipse at 50% 28%, #dcebe1 0, transparent 58%), #f5f7f6;
 }
 .welcome-main {
