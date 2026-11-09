@@ -24,10 +24,11 @@ export const useSignStore = defineStore('sign', () => {
   async function hydrate() {
     const result = await api
       .get('session')
-      .json<{ user: User | null; csrf_token: string; contribution: ContributionConfig }>()
+      .json<{ user: User | null; contribution: ContributionConfig }>()
+    const { csrf_token } = await api.get('csrf-token').json<{ csrf_token: string }>()
     user.value = result.user
     contribution.value = result.contribution
-    setCsrfToken(result.csrf_token)
+    setCsrfToken(csrf_token)
     ready.value = true
   }
   function getContribution() {
