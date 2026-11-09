@@ -13,6 +13,7 @@ const page = ref(1)
 const search = ref('')
 const query = ref('')
 const saving = ref<number | null>(null)
+const failedAvatarUrls = ref(new Set<string>())
 const { result, loading, error, load } = useCollection<User>('users', () => ({
   q: query.value,
   page: page.value,
@@ -59,7 +60,16 @@ function searchMembers() {
     <div v-else-if="!result.items.length" class="empty-state">没有找到这位成员。</div>
     <div v-else class="members-table">
       <div v-for="member in result.items" :key="member.id" class="member-row">
-        <span class="activity-avatar">{{ member.display_name.slice(0, 1) }}</span>
+        <span class="activity-avatar" aria-hidden="true">
+          <img
+            v-if="member.avatar && !failedAvatarUrls.has(member.avatar)"
+            :src="member.avatar"
+            alt=""
+            referrerpolicy="no-referrer"
+            @error="failedAvatarUrls.add(member.avatar)"
+          />
+          <span v-else>{{ member.display_name.slice(0, 1) }}</span>
+        </span>
         <div>
           <strong>{{ member.display_name }}</strong>
           <p class="hint">@{{ member.username }} · #{{ member.id }}</p>
@@ -88,6 +98,14 @@ function searchMembers() {
 </template>
 
 <style scoped>
+.activity-avatar {
+  overflow: hidden;
+}
+.activity-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 .members-table {
   padding: 0 18px;
   border: 1px solid var(--line);
