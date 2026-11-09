@@ -11,6 +11,7 @@ const router = createRouter({
     { path: '/history', component: () => import('@/views/HistoryView.vue') },
     { path: '/my-uploads', component: () => import('@/views/MyUploadsView.vue') },
     { path: '/contributions', component: () => import('@/views/ContributionsView.vue') },
+    { path: '/statistics', component: () => import('@/views/StatisticsView.vue') },
     { path: '/inbox', component: () => import('@/views/InboxView.vue') },
     { path: '/members', component: () => import('@/views/MembersView.vue') },
     { path: '/:pathMatch(.*)*', redirect: '/' },

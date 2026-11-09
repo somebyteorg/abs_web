@@ -54,6 +54,7 @@ async function logout() {
       <RouterLink v-if="sign.canEditOthers" to="/libraries" active-class="active">分类</RouterLink>
       <RouterLink to="/history" active-class="active">记录</RouterLink>
       <RouterLink to="/contributions" active-class="active">贡献</RouterLink>
+      <RouterLink to="/statistics" active-class="active">统计</RouterLink>
       <RouterLink v-if="sign.isAdmin" to="/members" active-class="active">成员</RouterLink>
     </nav>
     <div class="topbar-actions">
