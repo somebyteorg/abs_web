@@ -48,7 +48,7 @@ function authorChanges(log: Activity) {
     ? `${change.before.join('、') || '未关联作者'} → ${change.after.join('、') || '未关联作者'}`
     : '修改了作品关联的作者'
 }
-const draft = reactive({ user: '', from: '', to: '' })
+const draft = reactive({ category: 'without_uploads', user: '', from: '', to: '' })
 const applied = ref({ ...draft })
 const { result, loading, error, load } = useCollection<Activity>('history', () => ({
   ...applied.value,
@@ -167,6 +167,19 @@ function changes(log: Activity) {
 <template>
   <div class="page-title"><h1>记录</h1></div>
   <form class="filter-panel" @submit.prevent="search">
+    <label
+      >操作分类<select v-model="draft.category">
+        <option value="without_uploads">排除上传</option>
+        <option value="all">全部记录</option>
+        <option value="upload">上传与引用</option>
+        <option value="create">新建</option>
+        <option value="update">修改</option>
+        <option value="organize">整理与排序</option>
+        <option value="delete">删除</option>
+        <option value="restore">恢复</option>
+        <option value="other">其他操作</option>
+      </select></label
+    >
     <label>成员名字<input maxlength="100" v-model="draft.user" placeholder="化名或用户名" /></label>
     <label>从哪一天<input v-model="draft.from" type="date" /></label>
     <label>到哪一天<input v-model="draft.to" type="date" :min="draft.from" /></label>
