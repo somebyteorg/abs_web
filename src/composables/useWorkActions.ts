@@ -178,7 +178,7 @@ export function useWorkActions(
         },
       })
       order.finish()
-    }, '章节顺序已保存。')
+    }, '播放顺序已保存，稍后同步到收听端。')
   }
   async function retrySync() {
     await perform(async () => {

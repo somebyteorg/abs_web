@@ -47,6 +47,7 @@ export interface Work {
   creator?: User
   media_count?: number
   chapter_count?: number
+  chapter_order_matches?: boolean
   byte_size?: number
   next_episode?: number
   playable_count?: number
@@ -79,6 +80,7 @@ export interface Chapter {
   season_number: number
   episode_number: number
   index: number
+  listening_position?: number
   title: string
   primary_media_id: number | null
   resources_count?: number

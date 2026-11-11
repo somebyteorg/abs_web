@@ -36,7 +36,7 @@ export const actionNames: Record<string, string> = {
   'audio.uploaded': '上传了音频',
   'cover.uploaded': '更换了作品封面',
   'media.deleted': '删除了音频',
-  'chapters.reordered': '调整了章节顺序',
+  'chapters.reordered': '调整了播放顺序',
   'notice.accepted': '同意了上传须知',
   'role.updated': '调整了成员权限',
   'profile.updated': '更新了化名',

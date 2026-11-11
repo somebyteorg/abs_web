@@ -47,6 +47,7 @@ const {
   error,
   search,
   chapterFilter,
+  chapterOrder,
   expanded,
   chapterPage,
   pageSize,
@@ -84,7 +85,11 @@ const {
   valid: orderMoveValid,
   summary: orderMoveSummary,
   canUndo: orderCanUndo,
+  matchesEpisodeOrder: orderMatchesEpisode,
 } = order
+const episodeOrderMatches = computed(() =>
+  reorderMode.value ? orderMatchesEpisode.value : Boolean(work.value?.chapter_order_matches),
+)
 watch(reorderMode, data.sortingChanged)
 const {
   workDeleteOpen,
@@ -138,7 +143,7 @@ const {
   toggleExpand,
   toggleAllExpanded,
 } = selection
-useUnsavedChanges(() => orderDirty.value, '章节顺序尚未保存，离开后将丢失调整。')
+useUnsavedChanges(() => orderDirty.value, '播放顺序尚未保存，离开后将丢失调整。')
 function setDraftTarget(row: DraftRow) {
   moveMode.value = 'manual'
   const target = targetChapters.value.find((chapter) => chapter.id === row.chapter_id)
@@ -239,13 +244,20 @@ const busy = computed(
 onMounted(async () => {
   await Promise.allSettled([load(), catalog.load().catch(fail)])
 })
-async function startOrder() {
+function applyEpisodeOrder() {
+  clearFilters()
+  chapterPage.value = 1
+  order.useEpisodeOrder()
+}
+async function startOrder(useEpisodes = false) {
   if (busy.value) return
   try {
     if (!(await data.loadDirectory())) return
     setSelectionMode(null)
     clearFilters()
+    chapterOrder.value = 'listening'
     order.begin()
+    if (useEpisodes) applyEpisodeOrder()
   } catch (cause) {
     fail(cause)
   }
@@ -346,39 +358,71 @@ async function startOrder() {
             <h2>章节与资源</h2>
             <span class="count">{{ chapterCount }} 章 · {{ work.media_count || 0 }} 份</span>
           </div>
-          <div v-if="sign.canContribute" class="button-group workspace-actions">
-            <button v-if="queue.length" class="button secondary small" @click="uploadOpen = true">
-              <span v-if="running" class="status-dot"></span>{{ running ? '上传中' : '上传队列' }}
-              {{ completed }}/{{ queue.length
-              }}<span v-if="queueIssues" class="queue-issue-count">需处理 {{ queueIssues }}</span>
-            </button>
+          <div
+            v-if="sign.canContribute || (!reorderMode && expandableIds.length)"
+            class="button-group workspace-actions"
+          >
             <button
-              class="button secondary small"
-              :disabled="busy || reorderMode"
-              @click="editChapter()"
+              v-if="!reorderMode && expandableIds.length"
+              class="text-button"
+              @click="toggleAllExpanded"
             >
-              ＋ 新建章节
+              {{ allExpanded ? '收起备选' : '展开备选' }}
             </button>
-            <button
-              class="button primary small"
-              :disabled="busy || reorderMode"
-              @click="uploadOpen = true"
-            >
-              ＋ 上传资源
-            </button>
+            <template v-if="sign.canContribute">
+              <button v-if="queue.length" class="button secondary small" @click="uploadOpen = true">
+                <span v-if="running" class="status-dot"></span>{{ running ? '上传中' : '上传队列' }}
+                {{ completed }}/{{ queue.length
+                }}<span v-if="queueIssues" class="queue-issue-count">需处理 {{ queueIssues }}</span>
+              </button>
+              <button
+                class="button secondary small"
+                :disabled="busy || reorderMode"
+                @click="editChapter()"
+              >
+                ＋ 新建章节
+              </button>
+              <button
+                class="button primary small"
+                :disabled="busy || reorderMode"
+                @click="uploadOpen = true"
+              >
+                ＋ 上传资源
+              </button>
+            </template>
           </div>
         </div>
         <div class="workspace-filters">
-          <div class="search-field workspace-search">
-            <input
-              maxlength="100"
-              v-model="search"
-              type="search"
-              placeholder="搜索章节、文件名或上传者"
-              aria-label="搜索章节、文件名或上传者"
-            /><button v-if="search" type="button" aria-label="清空搜索" @click="search = ''">
-              ×
-            </button>
+          <div class="workspace-query">
+            <div class="chapter-order-switch" role="group" aria-label="查看顺序">
+              <button
+                type="button"
+                :aria-pressed="chapterOrder === 'episode'"
+                :disabled="busy || reorderMode"
+                @click="chapterOrder = 'episode'"
+              >
+                编号顺序
+              </button>
+              <button
+                type="button"
+                :aria-pressed="chapterOrder === 'listening'"
+                :disabled="busy || reorderMode"
+                @click="chapterOrder = 'listening'"
+              >
+                播放顺序
+              </button>
+            </div>
+            <div class="search-field workspace-search">
+              <input
+                maxlength="100"
+                v-model="search"
+                type="search"
+                placeholder="搜索章节、文件名或上传者"
+                aria-label="搜索章节、文件名或上传者"
+              /><button v-if="search" type="button" aria-label="清空搜索" @click="search = ''">
+                ×
+              </button>
+            </div>
           </div>
           <select v-model="chapterFilter" :disabled="reorderMode" aria-label="筛选章节">
             <option value="all">全部章节</option>
@@ -386,37 +430,52 @@ async function startOrder() {
             <option value="missing">缺资源</option>
             <option value="multiple">多份资源</option>
           </select>
-          <button v-if="hasFilters" class="text-button" @click="clearFilters">重置筛选</button>
-          <span class="hint result-count"
-            >显示 {{ visibleChapters.length }} /
-            {{ reorderMode ? matchingOrder.length : pageTotal }} 章</span
+          <div
+            v-if="!reorderMode && sign.canContribute && !selectionMode"
+            class="button-group list-tools"
           >
-          <div v-if="!reorderMode" class="button-group list-tools">
-            <button v-if="expandableIds.length" class="text-button" @click="toggleAllExpanded">
-              {{ allExpanded ? '收起备选' : '展开备选' }}
-            </button>
-            <template v-if="sign.canContribute && !selectionMode"
-              ><button
-                class="text-button"
-                :disabled="busy || !visibleChapters.length"
-                @click="setSelectionMode('chapter')"
-              >
-                整理章节</button
-              ><button
-                class="text-button"
-                :disabled="busy || !resources.length"
-                @click="setSelectionMode('resource')"
-              >
-                移动资源</button
-              ><button
-                class="text-button"
-                :disabled="busy || chapterCount < 2"
-                title="调整收听端的章节顺序"
-                @click="startOrder"
-              >
-                {{ directoryLoading ? '正在加载章节…' : '调整收听顺序' }}
-              </button></template
+            <button
+              class="text-button"
+              :disabled="busy || !visibleChapters.length"
+              @click="setSelectionMode('chapter')"
             >
+              整理章节
+            </button>
+            <button
+              class="text-button"
+              :disabled="busy || !resources.length"
+              @click="setSelectionMode('resource')"
+            >
+              移动资源
+            </button>
+            <button
+              class="text-button"
+              :disabled="busy || chapterCount < 2"
+              title="调整作品的播放顺序"
+              @click="startOrder()"
+            >
+              {{ directoryLoading ? '正在加载章节…' : '调整播放顺序' }}
+            </button>
+          </div>
+          <button v-if="hasFilters" class="text-button" @click="clearFilters">重置筛选</button>
+          <div
+            v-if="
+              sign.canContribute &&
+              !selectionMode &&
+              !episodeOrderMatches &&
+              (reorderMode || chapterOrder === 'episode')
+            "
+            class="order-apply"
+          >
+            <button
+              type="button"
+              class="text-button"
+              :disabled="busy || chapterCount < 2"
+              @click="reorderMode ? applyEpisodeOrder() : startOrder(true)"
+            >
+              {{ reorderMode ? '套用编号顺序' : '设为播放顺序' }}
+            </button>
+            <span class="hint">整部作品 · {{ chapterCount }} 章</span>
           </div>
         </div>
         <div v-if="reorderMode" class="selection-toolbar order-toolbar">
@@ -458,7 +517,7 @@ async function startOrder() {
             </button>
           </div>
           <div class="button-group order-save-tools">
-            <span v-if="orderDirty" class="hint">顺序尚未保存</span
+            <span v-if="orderDirty" class="hint">播放顺序尚未保存</span
             ><button class="text-button" :disabled="busy || !orderCanUndo" @click="order.undo">
               撤销上次</button
             ><button class="button secondary small" :disabled="busy" @click="order.cancel">
@@ -468,7 +527,7 @@ async function startOrder() {
               :disabled="busy || !orderDirty"
               @click="saveOrder"
             >
-              保存顺序
+              保存播放顺序
             </button>
           </div>
         </div>
@@ -562,7 +621,8 @@ async function startOrder() {
               :aria-label="`选择章节 ${row.chapter.title}`"
               @click="select('chapter', row.chapter.id, $event)"
             />
-            <span v-if="reorderMode" class="order-position tabular">第 {{ row.index + 1 }} 位</span
+            <span v-if="reorderMode || chapterOrder === 'listening'" class="order-position tabular"
+              >第 {{ row.position }} 位</span
             ><span class="chapter-code tabular"
               >S{{ row.chapter.season_number }}E{{ row.chapter.episode_number }}</span
             >
@@ -785,7 +845,7 @@ async function startOrder() {
     />
   </template>
 
-  <BaseDialog v-model="orderMoveOpen" title="移动章节顺序" :busy="busy">
+  <BaseDialog v-model="orderMoveOpen" title="调整播放位置" :busy="busy">
     <form id="move-chapter-order" class="form-stack" @submit.prevent="order.apply">
       <p class="order-move-summary">{{ orderMoveSummary }}</p>
       <label
@@ -1744,21 +1804,63 @@ async function startOrder() {
   justify-content: space-between;
 }
 .workspace-filters {
-  margin-top: 12px;
+  margin-top: 10px;
+}
+.workspace-query {
+  display: flex;
+  flex: 1 1 300px;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.chapter-order-switch {
+  display: inline-flex;
+  flex-shrink: 0;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #edf2ef;
+}
+.chapter-order-switch button {
+  min-height: 32px;
+  padding: 5px 12px;
+  border-radius: 5px;
+  color: var(--muted);
+  background: transparent;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.chapter-order-switch button:hover:not(:disabled) {
+  color: var(--green);
+}
+.chapter-order-switch button[aria-pressed='true'] {
+  background: #fff;
+  color: var(--green);
+  font-weight: 550;
+  box-shadow: 0 1px 3px #233b3014;
 }
 .workspace-actions {
   margin-left: auto;
   gap: 7px;
 }
 .workspace-search {
-  width: min(420px, 38%);
+  flex: 1;
+  min-width: 0;
 }
 .workspace-filters > select {
   width: 145px;
+  flex-shrink: 0;
+}
+.order-apply {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 8px;
+  white-space: nowrap;
 }
 .list-tools {
-  margin-left: auto;
-  gap: 16px;
+  flex-shrink: 0;
+  gap: 12px;
 }
 .selection-clear {
   margin-left: auto;
@@ -2456,16 +2558,6 @@ async function startOrder() {
   .queue-target-summary {
     grid-column: 1 / -1;
   }
-  .workspace-search {
-    flex: 1;
-    min-width: 160px;
-  }
-  .result-count {
-    margin-left: auto;
-  }
-  .list-tools {
-    margin-left: 0;
-  }
 }
 @media (max-width: 640px) {
   .organizer-sidebar .form-row {
@@ -2491,19 +2583,18 @@ async function startOrder() {
   .workspace-filters {
     gap: 8px;
   }
-  .workspace-search {
-    flex-basis: calc(100% - 130px);
-    min-width: 0;
+  .workspace-query {
+    flex-basis: 100%;
+    gap: 8px;
+  }
+  .chapter-order-switch button {
+    padding-inline: 9px;
   }
   .workspace-filters > select {
     width: 116px;
   }
-  .result-count {
-    margin-left: 0;
-  }
   .list-tools {
-    margin-left: auto;
-    gap: 12px;
+    gap: 8px;
   }
   .selection-toolbar {
     gap: 7px;

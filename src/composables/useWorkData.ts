@@ -1,6 +1,7 @@
 import { computed, onScopeDispose, ref, watch } from 'vue'
 import { useEventListener, watchDebounced } from '@vueuse/core'
 import { useFeedback } from '@/composables/useFeedback'
+import { compareEpisodeOrder } from '@/utils/chapters'
 import api from '@/utils/ky'
 import type { AudioResource, Chapter, Paginated, UploadResult, Work } from '@/types'
 
@@ -8,10 +9,6 @@ interface WorkDataOptions {
   isSorting: () => boolean
   retainedChapterIds: () => number[]
   onReload: () => void
-}
-
-function compareChapters(a: Chapter, b: Chapter) {
-  return a.season_number - b.season_number || a.episode_number - b.episode_number || a.id - b.id
 }
 
 export function useWorkData(id: number, options: WorkDataOptions) {
@@ -25,6 +22,7 @@ export function useWorkData(id: number, options: WorkDataOptions) {
   const error = ref('')
   const search = ref('')
   const chapterFilter = ref('all')
+  const chapterOrder = ref<'episode' | 'listening'>('episode')
   const expanded = ref<number[]>([])
   const chapterPage = ref(1)
   const pageSize = ref(20)
@@ -35,6 +33,11 @@ export function useWorkData(id: number, options: WorkDataOptions) {
   let pageController: AbortController | undefined
   let directoryController: AbortController | undefined
   let loadVersion = 0
+  function compareChapters(a: Chapter, b: Chapter) {
+    return chapterOrder.value === 'episode'
+      ? compareEpisodeOrder(a, b)
+      : a.index - b.index || a.id - b.id
+  }
   function primary(chapter: Chapter) {
     return chapter.resources.find((resource) => resource.id === chapter.primary_media_id) || null
   }
@@ -95,6 +98,7 @@ export function useWorkData(id: number, options: WorkDataOptions) {
       return {
         chapter,
         index,
+        position: options.isSorting() ? index + 1 : chapter.listening_position,
         alternatives: others,
         sections: [
           { primary: true, resources: main ? [main] : [] },
@@ -128,7 +132,12 @@ export function useWorkData(id: number, options: WorkDataOptions) {
       const result = await api
         .get(`works/${id}/chapter-page`, {
           signal: request.signal,
-          searchParams: { q: search.value.trim(), filter: chapterFilter.value, page },
+          searchParams: {
+            q: search.value.trim(),
+            filter: chapterFilter.value,
+            order: chapterOrder.value,
+            page,
+          },
         })
         .json<Paginated<Chapter>>()
       if (request.signal.aborted) return
@@ -191,7 +200,7 @@ export function useWorkData(id: number, options: WorkDataOptions) {
       if (request.signal.aborted) return false
       if (result.revision !== work.value?.revision) {
         serverChanged.value = true
-        throw new Error('章节有新改动，请刷新作品后再调整顺序。')
+        throw new Error('章节有新改动，请刷新作品后再调整播放顺序。')
       }
       orderChapters.value = result.items.map((chapter) => ({ ...chapter, resources: [] }))
       return true
@@ -212,9 +221,14 @@ export function useWorkData(id: number, options: WorkDataOptions) {
     }
     if (result.work && work.value) Object.assign(work.value, result.work)
     if (result.chapter) {
-      const item = { ...result.chapter, resources_count: result.chapter.resources.length }
+      const publishedChapter = result.chapter
+      const index = chapters.value.findIndex((chapter) => chapter.id === publishedChapter.id)
+      const item = {
+        ...chapters.value[index],
+        ...publishedChapter,
+        resources_count: publishedChapter.resources.length,
+      }
       const isOnPage = pageIds.value.includes(item.id)
-      const index = chapters.value.findIndex((chapter) => chapter.id === item.id)
       if (index >= 0) chapters.value[index] = item
       const last = chapters.value.find((chapter) => chapter.id === pageIds.value.at(-1))
       if (
@@ -224,6 +238,8 @@ export function useWorkData(id: number, options: WorkDataOptions) {
         (!last || compareChapters(item, last) > 0) &&
         !isOnPage
       ) {
+        if (chapterOrder.value === 'listening')
+          item.listening_position = (last?.listening_position || 0) + 1
         if (index < 0) chapters.value.push(item)
         pageIds.value.push(item.id)
       }
@@ -239,6 +255,9 @@ export function useWorkData(id: number, options: WorkDataOptions) {
     },
     { debounce: 300 },
   )
+  watch(chapterOrder, () => {
+    if (!options.isSorting()) void loadPage(1)
+  })
   function sortingChanged(active: boolean) {
     pageController?.abort()
     pageLoading.value = false
@@ -268,6 +287,7 @@ export function useWorkData(id: number, options: WorkDataOptions) {
     error,
     search,
     chapterFilter,
+    chapterOrder,
     expanded,
     chapterPage,
     pageSize,

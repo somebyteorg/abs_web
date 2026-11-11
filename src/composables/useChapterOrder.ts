@@ -1,4 +1,5 @@
 import { computed, nextTick, ref, type Ref } from 'vue'
+import { compareEpisodeOrder } from '@/utils/chapters'
 import type { Chapter } from '@/types'
 
 export function useChapterOrder(chapters: Ref<Chapter[]>, onMoved?: (id: number) => void) {
@@ -14,6 +15,10 @@ export function useChapterOrder(chapters: Ref<Chapter[]>, onMoved?: (id: number)
   const original = ref<number[]>([])
   const undoStack = ref<number[][]>([])
   const canUndo = computed(() => undoStack.value.length > 0)
+  const episodeOrder = computed(() => [...chapters.value].sort(compareEpisodeOrder))
+  const matchesEpisodeOrder = computed(() =>
+    episodeOrder.value.every((chapter, index) => chapter.id === chapters.value[index]?.id),
+  )
   const moving = computed(() => {
     const ids = new Set(movingIds.value)
     return chapters.value.filter((chapter) => ids.has(chapter.id))
@@ -100,6 +105,10 @@ export function useChapterOrder(chapters: Ref<Chapter[]>, onMoved?: (id: number)
     const previous = undoStack.value.pop()
     if (previous) restoreOrder(previous)
   }
+  function useEpisodeOrder() {
+    commit(episodeOrder.value)
+    selected.value = []
+  }
   function step(index: number, direction: number) {
     const target = index + direction
     if (target < 0 || target >= chapters.value.length) return
@@ -159,11 +168,13 @@ export function useChapterOrder(chapters: Ref<Chapter[]>, onMoved?: (id: number)
     valid,
     summary,
     canUndo,
+    matchesEpisodeOrder,
     reset,
     begin,
     finish,
     cancel,
     undo,
+    useEpisodeOrder,
     step,
     open,
     apply,

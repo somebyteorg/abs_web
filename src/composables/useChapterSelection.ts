@@ -5,8 +5,16 @@ import type { useWorkData } from '@/composables/useWorkData'
 type WorkData = ReturnType<typeof useWorkData>
 
 export function useChapterSelection(data: WorkData, order: ReturnType<typeof useChapterOrder>) {
-  const { chapters, orderChapters, resources, visibleChapters, expanded, search, chapterFilter } =
-    data
+  const {
+    chapters,
+    orderChapters,
+    resources,
+    visibleChapters,
+    expanded,
+    search,
+    chapterFilter,
+    chapterOrder,
+  } = data
   const { active: reorderMode, selected: orderSelected } = order
   const selectionMode = ref<'chapter' | 'resource' | null>(null)
   const selectedChapters = ref<number[]>([])
@@ -32,7 +40,7 @@ export function useChapterSelection(data: WorkData, order: ReturnType<typeof use
   }
   let lastChapter = -1
   let lastResource = -1
-  watch([search, chapterFilter], () => {
+  watch([search, chapterFilter, chapterOrder], () => {
     lastChapter = -1
     lastResource = -1
   })
