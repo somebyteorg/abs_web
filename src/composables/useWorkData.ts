@@ -10,6 +10,10 @@ interface WorkDataOptions {
   onReload: () => void
 }
 
+function compareChapters(a: Chapter, b: Chapter) {
+  return a.season_number - b.season_number || a.episode_number - b.episode_number || a.id - b.id
+}
+
 export function useWorkData(id: number, options: WorkDataOptions) {
   const { fail } = useFeedback()
   const work = ref<Work>()
@@ -209,6 +213,7 @@ export function useWorkData(id: number, options: WorkDataOptions) {
     if (result.work && work.value) Object.assign(work.value, result.work)
     if (result.chapter) {
       const item = { ...result.chapter, resources_count: result.chapter.resources.length }
+      const isOnPage = pageIds.value.includes(item.id)
       const index = chapters.value.findIndex((chapter) => chapter.id === item.id)
       if (index >= 0) chapters.value[index] = item
       const last = chapters.value.find((chapter) => chapter.id === pageIds.value.at(-1))
@@ -216,14 +221,14 @@ export function useWorkData(id: number, options: WorkDataOptions) {
         !filtered.value &&
         Math.ceil(chapterCount.value / pageSize.value) === chapterPage.value &&
         pageIds.value.length < pageSize.value &&
-        (!last || item.index >= last.index) &&
-        !pageIds.value.includes(item.id)
+        (!last || compareChapters(item, last) > 0) &&
+        !isOnPage
       ) {
         if (index < 0) chapters.value.push(item)
         pageIds.value.push(item.id)
       }
       pageTotal.value = filtered.value ? pageTotal.value : chapterCount.value
-      if (filtered.value) void loadPage()
+      if (filtered.value || (!isOnPage && last && compareChapters(item, last) < 0)) void loadPage()
     } else void load()
   })
   watchDebounced(

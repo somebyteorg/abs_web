@@ -411,10 +411,10 @@ async function startOrder() {
               ><button
                 class="text-button"
                 :disabled="busy || chapterCount < 2"
-                title="调整章节显示顺序"
+                title="调整收听端的章节顺序"
                 @click="startOrder"
               >
-                {{ directoryLoading ? '正在加载章节…' : '调整顺序' }}
+                {{ directoryLoading ? '正在加载章节…' : '调整收听顺序' }}
               </button></template
             >
           </div>
